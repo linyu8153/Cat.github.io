@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貓咪少年物語</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0f14;font-family:'Microsoft JhengHei','PingFang TC','Heiti TC',sans-serif;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.game-wrap{width:100%;max-width:480px;background:#161b25;border:1px solid #2a3347;border-radius:20px;overflow:hidden;box-shadow:0 0 60px rgba(100,120,255,.15),0 0 0 1px rgba(255,255,255,.04)}
+
+/* TITLE */
+.title-screen{display:flex;flex-direction:column;align-items:center;padding:52px 32px;gap:18px;text-align:center}
+.title-cat{font-size:5rem;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.title-screen h1{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;font-weight:700;font-size:2.1rem;font-weight:700;background:linear-gradient(135deg,#a78bfa,#60a5fa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.35}
+.title-sub{color:#64748b;font-size:.85rem;letter-spacing:1px}
+.btn-start{margin-top:10px;padding:14px 44px;background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none;border-radius:12px;color:#fff;font-size:1.1rem;font-family:inherit;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 24px rgba(124,58,237,.4);transition:all .2s}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.5)}
+
+/* CREATE */
+.create-screen{padding:32px;display:flex;flex-direction:column;gap:20px}
+.create-screen h2{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;font-weight:700;font-size:1.4rem;color:#a78bfa}
+.form-group{display:flex;flex-direction:column;gap:8px}
+.form-group label{font-size:.83rem;color:#94a3b8}
+.form-input{padding:10px 14px;background:#1e2535;border:1px solid #2a3347;border-radius:10px;color:#e2e8f0;font-family:inherit;font-size:1rem;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:#7c3aed}
+.job-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.job-btn{padding:12px 8px;border-radius:10px;border:2px solid #2a3347;background:#1e2535;color:#94a3b8;cursor:pointer;font-family:inherit;font-size:.9rem;transition:all .2s;text-align:center}
+.job-btn.selected{border-color:#7c3aed;background:rgba(124,58,237,.15);color:#a78bfa}
+.job-btn:hover{border-color:#4f46e5}
+
+/* HEADER */
+.game-header{padding:16px 20px 12px;background:linear-gradient(180deg,#1a2035 0%,#161b25 100%);border-bottom:1px solid #2a3347}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start}
+.cat-info h2{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;font-weight:700;font-size:1.2rem;color:#e2e8f0}
+.job-badge{font-size:.72rem;color:#a78bfa;background:rgba(124,58,237,.15);padding:2px 8px;border-radius:20px;border:1px solid rgba(124,58,237,.3);display:inline-block;margin-top:2px}
+.cat-stats{text-align:right;font-size:.8rem;color:#94a3b8}
+.cat-stats .gold{color:#fbbf24;font-weight:700}
+.bars{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{font-size:.72rem;color:#64748b;width:46px}
+.bar-track{flex:1;height:7px;background:#1e2535;border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .4s}
+.bar-fill.hp{background:linear-gradient(90deg,#ef4444,#f87171)}
+.bar-fill.hunger{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.bar-fill.mood{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+.bar-fill.exp{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.bar-val{font-size:.7rem;color:#64748b;width:38px;text-align:right}
+
+/* TABS */
+.tab-bar{display:flex;background:#111520;border-bottom:1px solid #2a3347}
+.tab-btn{flex:1;padding:12px 4px;background:none;border:none;border-bottom:2px solid transparent;color:#475569;font-family:inherit;font-size:.72rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab-btn .tab-icon{font-size:1.2rem}
+.tab-btn.active{color:#a78bfa;border-bottom-color:#7c3aed}
+
+/* MAIN CONTENT */
+.main-content{padding:16px;min-height:360px}
+.section-title{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+
+/* HOME */
+.home-tab{display:flex;flex-direction:column;gap:12px}
+.cat-display{background:#1e2535;border-radius:14px;padding:20px;text-align:center;border:1px solid #2a3347}
+.cat-face{font-size:1.05rem;line-height:1.7;color:#e2e8f0;font-family:monospace}
+.cat-ears{color:#a78bfa;font-size:1.3rem}
+.cat-face.happy .cat-body{color:#fbbf24}
+.cat-face.sad .cat-body{color:#94a3b8}
+.cat-face.hurt .cat-body{color:#f87171}
+.dialogue-box{background:#111827;border:1px solid #2a3347;border-radius:12px;padding:12px 14px;font-size:.88rem;color:#cbd5e1;line-height:1.65;min-height:56px;position:relative}
+.dialogue-box::before{content:"💬";position:absolute;top:-11px;left:14px;font-size:1rem}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.action-btn{padding:10px 8px;border-radius:10px;border:1px solid #2a3347;background:#1e2535;color:#e2e8f0;font-family:inherit;font-size:.85rem;cursor:pointer;transition:all .2s}
+.action-btn:hover{background:#263248;border-color:#4f46e5;transform:translateY(-1px)}
+.food-grid{display:flex;gap:8px;flex-wrap:wrap}
+.food-btn{flex:1;min-width:70px;padding:8px 4px;border-radius:10px;border:1px solid #2a3347;background:#1e2535;color:#e2e8f0;font-family:inherit;font-size:.78rem;cursor:pointer;text-align:center;transition:all .2s}
+.food-btn:hover{background:#263248}
+.food-icon{font-size:1.3rem;display:block}
+.food-price{color:#fbbf24;font-size:.72rem;margin-top:2px}
+.log-box{background:#111520;border:1px solid #1e2535;border-radius:10px;padding:10px 14px;height:90px;overflow-y:auto;font-size:.75rem;display:flex;flex-direction:column;gap:3px}
+
+/* ADVENTURE */
+.monster-list{display:flex;flex-direction:column;gap:8px}
+.monster-card{background:#1e2535;border:1px solid #2a3347;border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .2s}
+.monster-card:hover{border-color:#ef4444;background:#221820}
+.monster-left{display:flex;align-items:center;gap:10px}
+.monster-emoji{font-size:1.8rem}
+.monster-name{font-size:.9rem;color:#e2e8f0;font-weight:700}
+.monster-stats{font-size:.75rem;color:#64748b;margin-top:2px}
+.monster-reward{text-align:right;font-size:.78rem}
+.m-exp{color:#60a5fa}
+.m-gold{color:#fbbf24}
+
+/* BATTLE */
+.battle-screen{padding:20px;display:flex;flex-direction:column;gap:14px}
+.battle-header{text-align:center;font-family:'Microsoft JhengHei','PingFang TC',sans-serif;font-weight:700;color:#f87171;font-size:1.1rem}
+.battle-field{background:#1e2535;border-radius:14px;padding:16px;border:1px solid #2a3347;display:flex;justify-content:space-between;align-items:center}
+.fighter{text-align:center;flex:1}
+.fighter-name{font-size:.8rem;color:#94a3b8;margin-bottom:4px}
+.fighter-emoji{font-size:2.5rem;margin:4px 0}
+.fighter-hp{font-size:.78rem}
+.vs-text{font-size:1.2rem;color:#475569}
+.battle-log{background:#111520;border:1px solid #2a3347;border-radius:10px;padding:10px 14px;height:100px;overflow-y:auto;font-size:.8rem;display:flex;flex-direction:column;gap:4px}
+.battle-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.battle-btn{padding:12px;border-radius:10px;border:none;font-family:inherit;font-size:.9rem;cursor:pointer;transition:all .2s}
+.battle-btn.attack{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.battle-btn.item{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.battle-btn.flee{background:#1e2535;border:1px solid #2a3347;color:#94a3b8;grid-column:span 2}
+.battle-btn:hover:not(:disabled){transform:translateY(-2px);opacity:.9}
+.battle-btn:disabled{opacity:.4;cursor:not-allowed}
+.battle-result{text-align:center;padding:16px;background:#1e2535;border-radius:12px;border:1px solid #2a3347}
+.battle-result h3{font-size:1.3rem;margin-bottom:8px}
+.win-result h3{color:#fbbf24}
+.lose-result h3{color:#f87171}
+
+/* SHOP */
+.shop-tabs{display:flex;gap:8px;margin-bottom:12px}
+.shop-tab-btn{flex:1;padding:8px;border-radius:8px;border:1px solid #2a3347;background:#1e2535;color:#64748b;font-family:inherit;font-size:.82rem;cursor:pointer;transition:all .2s}
+.shop-tab-btn.active{border-color:#7c3aed;background:rgba(124,58,237,.15);color:#a78bfa}
+.item-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto}
+.item-card{background:#1e2535;border:1px solid #2a3347;border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}
+.item-left{display:flex;align-items:center;gap:10px}
+.item-emoji{font-size:1.5rem}
+.item-name{font-size:.88rem;color:#e2e8f0}
+.item-stat{font-size:.73rem;color:#64748b;margin-top:2px}
+.buy-btn{padding:6px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;font-family:inherit;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.buy-btn:hover{opacity:.85}
+
+/* INVENTORY */
+.equip-slots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.equip-slot{background:#111520;border:1px dashed #2a3347;border-radius:10px;padding:10px;text-align:center}
+.slot-label{font-size:.68rem;color:#475569}
+.slot-item{font-size:1.2rem;margin:4px 0}
+.slot-name{font-size:.7rem;color:#94a3b8}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:300px;overflow-y:auto}
+.inv-card{background:#1e2535;border:1px solid #2a3347;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.inv-card:hover{border-color:#7c3aed;background:#263248}
+.i-emoji{font-size:2rem}
+.i-name{font-size:.78rem;color:#e2e8f0;margin-top:4px}
+.i-stat{font-size:.7rem;color:#64748b;margin-top:2px}
+
+/* MISC */
+.notification{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:.85rem;z-index:9999;animation:slideDown .3s ease;pointer-events:none}
+@keyframes slideDown{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+.notif-success{background:#065f46;border:1px solid #10b981;color:#6ee7b7}
+.notif-error{background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5}
+.notif-info{background:#1e3a5f;border:1px solid #3b82f6;color:#93c5fd}
+.btn-back{padding:8px 16px;border-radius:8px;border:1px solid #2a3347;background:#1e2535;color:#94a3b8;font-family:inherit;font-size:.82rem;cursor:pointer}
+.btn-primary{padding:12px 24px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;font-family:inherit;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.thinking{color:#64748b;font-style:italic;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.day-badge{font-size:.75rem;color:#475569;margin-top:2px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a3347;border-radius:99px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div id="notification" class="notification hidden"></div>
+
+<div class="game-wrap">
+  <div id="app"></div>
+</div>
+
+<script>
+// ── 資料 ──────────────────────────────────────────────
+const JOBS = ["見習劍士","流浪者","魔法師","暗影刺客"];
+const JOB_ICONS = {"見習劍士":"⚔️","流浪者":"🗡️","魔法師":"🔮","暗影刺客":"🌙"};
+const CAT_NAMES = ["小銀","雷歐","夜影","琥珀","蒼月"];
+
+const MONSTERS = [
+  {name:"迷途老鼠",hp:20,atk:3,exp:8,gold:5,emoji:"🐀"},
+  {name:"森林蜘蛛",hp:35,atk:6,exp:15,gold:10,emoji:"🕷️"},
+  {name:"石頭怪",hp:60,atk:10,exp:28,gold:20,emoji:"🪨"},
+  {name:"火焰蛇",hp:80,atk:14,exp:45,gold:35,emoji:"🐍"},
+  {name:"黑暗騎士",hp:120,atk:20,exp:80,gold:60,emoji:"🛡️"},
+];
+
+const EQUIPMENT = [
+  {id:"sword1",name:"生鏽短劍",slot:"weapon",atk:3,price:30,emoji:"🗡️"},
+  {id:"sword2",name:"銀刃劍",slot:"weapon",atk:8,price:100,emoji:"⚔️"},
+  {id:"staff1",name:"見習法杖",slot:"weapon",atk:5,price:50,emoji:"🪄"},
+  {id:"armor1",name:"布衣",slot:"armor",def:2,price:20,emoji:"👕"},
+  {id:"armor2",name:"皮甲",slot:"armor",def:6,price:80,emoji:"🦺"},
+  {id:"helm1",name:"貓耳頭盔",slot:"helm",def:3,price:60,emoji:"🪖"},
+  {id:"potion1",name:"小回復藥",slot:"item",heal:30,price:15,emoji:"🧪"},
+  {id:"potion2",name:"大回復藥",slot:"item",heal:80,price:40,emoji:"💊"},
+];
+
+const FOODS = [
+  {name:"小魚乾",hunger:20,mood:5,price:0,emoji:"🐟",free:true},
+  {name:"鮮魚湯",hunger:40,mood:15,price:25,emoji:"🍲"},
+  {name:"烤雞腿",hunger:60,mood:20,price:40,emoji:"🍗"},
+  {name:"貓咪蛋糕",hunger:30,mood:40,price:60,emoji:"🎂"},
+];
+
+// ── 狀態 ──────────────────────────────────────────────
+let state = {
+  screen: "title",       // title | create | main | battle
+  tab: "home",           // home | adventure | shop | inventory
+  shopTab: "equip",
+  cat: null,
+  battle: null,
+  log: [],
+  dialogues: [],
+  aiThinking: false,
+  battleTurn: "player",
+};
+
+// ── 工具函式 ──────────────────────────────────────────
+function notify(msg, type="info") {
+  const el = document.getElementById("notification");
+  el.textContent = msg;
+  el.className = `notification notif-${type}`;
+  el.classList.remove("hidden");
+  setTimeout(() => el.classList.add("hidden"), 2500);
+}
+
+function addLog(text, color="#c9d1d9") {
+  state.log.push({text, color, id: Date.now() + Math.random()});
+  if (state.log.length > 40) state.log.shift();
+}
+
+function getTotalAtk(cat) {
+  let b = 0;
+  if (cat.equip.weapon) b += cat.equip.weapon.atk || 0;
+  return cat.atk + b;
+}
+function getTotalDef(cat) {
+  let b = 0;
+  if (cat.equip.armor) b += cat.equip.armor.def || 0;
+  if (cat.equip.helm) b += cat.equip.helm.def || 0;
+  return cat.def + b;
+}
+
+function checkLevelUp(cat) {
+  while (cat.exp >= cat.expNext) {
+    cat.exp -= cat.expNext;
+    cat.lv += 1;
+    cat.expNext = Math.floor(cat.expNext * 1.4);
+    cat.maxHp += 15;
+    cat.hp = cat.maxHp;
+    cat.atk += 3;
+    cat.def += 2;
+    addLog(`🎉 ${cat.name} 升到 Lv.${cat.lv}！`, "#ffd700");
+    notify(`⬆️ 升級！現在 Lv.${cat.lv}`, "success");
+  }
+  return cat;
+}
+
+// ── 固定台詞系統 ──────────────────────────────────────
+const DIALOGUES = {
+  feed: [
+    "哼……本喵才不是因為好吃才吃的。只是……謝謝你。",
+    "喵！這個味道還可以啦……下次多準備一點！",
+    "……還不錯。本喵勉強給你一個認可。",
+    "喵嗚～好吃！不對，我是說……普通而已。",
+    "你終於想到要餵我了嗎？本喵等好久了。",
+  ],
+  play: [
+    "哼，跟你玩是為了練習反應速度，不是因為開心！",
+    "喵！再來一次！……不是說我很喜歡啦。",
+    "……玩得還算可以。你的身手比本喵想的好一點。",
+    "嘿嘿，這樣算是本喵贏了喵！",
+    "喵嗚，好玩好玩～啊不對，我是說……還行。",
+  ],
+  sleep: [
+    "喵……新的一天。今天也要努力呢，才不是為了你！",
+    "早安……昨晚睡得還不錯。今天去冒險嗎？",
+    "呼……（伸懶腰）本喵精神滿滿了，去打怪！",
+    "又是新的一天喵。主人，今天有什麼計畫？",
+    "睡得好香……嗯？哦，你在啊。早安。",
+  ],
+  chat: [
+    "喵……你找本喵說話，是有什麼事嗎？",
+    "最近的冒險還不錯。本喵越來越強了喵！",
+    "哼，別以為多跟本喵說話本喵就會高興……才不會呢。",
+    "喵嗚，今天天氣真好。適合出去打怪的那種好。",
+    "……你看我做什麼？臉上有東西嗎，喵？",
+  ],
+  adventure: [
+    "冒險的感覺真不錯！本喵的劍術越來越厲害了喵！",
+    "喵！打倒了！本喵最強！……謝謝你的支持啦。",
+    "哼，那種程度的對手根本不是本喵的對手！",
+    "一起冒險……雖然嘴上不說，但本喵覺得還不錯喵。",
+    "喵嗚～勝利！今天心情很好，才不是因為你在呢！",
+  ],
+  hurt: [
+    "喵……輸了。沒關係，下次本喵一定贏回來！",
+    "……好痛。但本喵不會哭的。只是眼睛進沙子了。",
+    "哼，今天算你們運氣好。下次絕對不會輸喵！",
+    "喵嗚……休息一下就好，本喵還撐得住。",
+  ],
+  hungry: [
+    "喵……肚子有點餓了。不是在暗示你什麼，只是說說。",
+    "哼，本喵才不是餓了……只是聞到食物的味道而已。",
+    "喵嗚，好餓……主人，你有帶吃的嗎？",
+  ],
+  sad: [
+    "……今天心情不太好。別管本喵了，喵。",
+    "哼，本喵沒事。只是有點……想家而已。",
+    "喵……陪本喵待一下就好，不用說話。",
+  ],
+};
+
+function getDialogue(type) {
+  const cat = state.cat;
+  // 根據狀態選台詞類型
+  if (type === "feed" && cat && cat.hunger < 30) type = "hungry";
+  if (type === "chat" && cat && cat.mood < 30) type = "sad";
+  const list = DIALOGUES[type] || DIALOGUES.chat;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function askAI(prompt) {
+  const cat = state.cat;
+  if (!cat) return;
+  // 根據 prompt 關鍵字判斷情境
+  let type = "chat";
+  if (prompt.includes("吃") || prompt.includes("食物")) type = "feed";
+  else if (prompt.includes("玩")) type = "play";
+  else if (prompt.includes("早上") || prompt.includes("一天")) type = "sleep";
+  else if (prompt.includes("冒險") || prompt.includes("打敗")) type = "adventure";
+  else if (prompt.includes("落敗") || prompt.includes("受傷")) type = "hurt";
+
+  const reply = getDialogue(type);
+  state.dialogues.push({role:"assistant", content:reply});
+  if (state.dialogues.length > 8) state.dialogues.shift();
+  render();
+}
+
+// ── 動作函式 ──────────────────────────────────────────
+function createCat(name, job) {
+  name = name.trim() || CAT_NAMES[Math.floor(Math.random()*CAT_NAMES.length)];
+  state.cat = {
+    name, job,
+    lv:1, exp:0, expNext:100,
+    hp:100, maxHp:100,
+    atk:10, def:5,
+    hunger:80, mood:80,
+    gold:50,
+    equip:{weapon:null, armor:null, helm:null},
+    inventory:[{...EQUIPMENT.find(e=>e.id==="potion1"), qty:2}],
+    days:1,
+  };
+  state.screen = "main";
+  state.tab = "home";
+  state.dialogues = [{role:"assistant", content:`嗯……你就是新主人嗎？哼，本喵才不稀罕呢。不過……謝謝你收留我。我叫${name}。`}];
+  addLog(`✨ ${name} 開始了他的冒險之旅！`, "#ffd700");
+  render();
+}
+
+function feedCat(food) {
+  const cat = state.cat;
+  if (!food.free && cat.gold < food.price) { notify("金幣不足！","error"); return; }
+  cat.hunger = Math.min(100, cat.hunger + food.hunger);
+  cat.mood = Math.min(100, cat.mood + food.mood);
+  if (!food.free) cat.gold -= food.price;
+  addLog(`🍽️ 餵了${cat.name} ${food.emoji}${food.name}`, "#7ee8a2");
+  askAI(`主人剛給你吃了${food.name}，你的反應是？`);
+  render();
+}
+
+function playCat() {
+  const cat = state.cat;
+  cat.mood = Math.min(100, cat.mood + 15);
+  cat.hunger = Math.max(0, cat.hunger - 10);
+  addLog(`🎮 和${cat.name}玩耍了一會兒！`, "#7ee8a2");
+  askAI("主人陪你玩了一會兒，你很開心！");
+  render();
+}
+
+function sleepDay() {
+  const cat = state.cat;
+  cat.hp = Math.min(cat.maxHp, cat.hp + Math.floor(cat.maxHp * 0.3));
+  cat.hunger = Math.max(0, cat.hunger - 20);
+  cat.mood = Math.max(0, cat.mood - 5);
+  cat.days += 1;
+  addLog(`🌙 第 ${cat.days} 天開始了`, "#a78bfa");
+  askAI("早上好！新的一天開始了，你有什麼想做的嗎？");
+  render();
+}
+
+function startBattle(monster) {
+  state.battle = {
+    monster: {...monster, curHp: monster.hp},
+    over: false,
+    result: null,
+  };
+  state.battleTurn = "player";
+  state.screen = "battle";
+  addLog(`⚔️ 遭遇了 ${monster.emoji}${monster.name}！`, "#f87171");
+  render();
+}
+
+function playerAttack() {
+  if (!state.battle || state.battle.over || state.battleTurn !== "player") return;
+  const cat = state.cat;
+  const dmg = Math.max(1, getTotalAtk(cat) - Math.floor(Math.random()*3));
+  const crit = Math.random() < 0.15;
+  const finalDmg = crit ? dmg*2 : dmg;
+  state.battle.monster.curHp = Math.max(0, state.battle.monster.curHp - finalDmg);
+  addLog(`${crit?"💥 暴擊！":"⚔️"} 對 ${state.battle.monster.emoji}${state.battle.monster.name} 造成 ${finalDmg} 傷害`, "#fbbf24");
+
+  if (state.battle.monster.curHp <= 0) {
+    const m = state.battle.monster;
+    addLog(`✨ 擊敗了 ${m.name}！獲得 ${m.exp} EXP、${m.gold} 金幣`, "#ffd700");
+    cat.exp += m.exp;
+    cat.gold += m.gold;
+    cat.mood = Math.min(100, cat.mood + 10);
+    checkLevelUp(cat);
+    state.battle.over = true;
+    state.battle.result = "win";
+    askAI(`你剛剛打敗了${m.name}，勝利後的感言？`);
+  } else {
+    state.battleTurn = "monster";
+    render();
+    setTimeout(monsterAttack, 700);
+    return;
+  }
+  render();
+}
+
+function monsterAttack() {
+  if (!state.battle || state.battle.over) return;
+  const cat = state.cat;
+  const m = state.battle.monster;
+  const monDmg = Math.max(1, m.atk - getTotalDef(cat) + Math.floor(Math.random()*4) - 2);
+  cat.hp = Math.max(0, cat.hp - monDmg);
+  addLog(`💢 ${m.name} 攻擊你，受到 ${monDmg} 傷害`, "#f87171");
+  if (cat.hp <= 0) {
+    cat.hp = 1;
+    cat.mood = Math.max(0, cat.mood - 20);
+    addLog(`💀 ${cat.name} 倒下了……`, "#f87171");
+    state.battle.over = true;
+    state.battle.result = "lose";
+    askAI("你在戰鬥中落敗了，受傷地躺在地上……");
+  } else {
+    state.battleTurn = "player";
+  }
+  render();
+}
+
+function useItemInBattle() {
+  const cat = state.cat;
+  const potion = cat.inventory.find(i => i.heal);
+  if (!potion) { notify("沒有回復藥！","error"); return; }
+  const healed = Math.min(cat.maxHp - cat.hp, potion.heal);
+  cat.hp += healed;
+  potion.qty -= 1;
+  cat.inventory = cat.inventory.filter(i => i.qty > 0);
+  addLog(`💊 使用了 ${potion.emoji}${potion.name}，回復 ${healed} HP`, "#7ee8a2");
+  state.battleTurn = "monster";
+  render();
+  setTimeout(monsterAttack, 700);
+}
+
+function flee() {
+  addLog(`💨 逃跑了！`, "#a78bfa");
+  state.screen = "main";
+  state.battle = null;
+  render();
+}
+
+function buyItem(item) {
+  const cat = state.cat;
+  if (cat.gold < item.price) { notify("金幣不足！","error"); return; }
+  cat.gold -= item.price;
+  if (item.slot === "item") {
+    const ex = cat.inventory.find(i => i.id === item.id);
+    if (ex) ex.qty += 1;
+    else cat.inventory.push({...item, qty:1});
+  } else {
+    if (!cat.inventory.find(i=>i.id===item.id)) cat.inventory.push({...item,qty:1});
+    else { notify("背包已有此裝備！","info"); cat.gold += item.price; return; }
+  }
+  notify(`✅ 購入 ${item.emoji}${item.name}`, "success");
+  addLog(`🛒 購入了 ${item.emoji}${item.name}（-${item.price}G）`, "#fbbf24");
+  render();
+}
+
+function equipItem(item) {
+  const cat = state.cat;
+  if (item.slot === "item") {
+    const healed = Math.min(cat.maxHp - cat.hp, item.heal);
+    cat.hp = Math.min(cat.maxHp, cat.hp + item.heal);
+    item.qty -= 1;
+    cat.inventory = cat.inventory.filter(i => i.qty > 0);
+    notify(`💊 回復了 ${healed} HP`, "success");
+    render(); return;
+  }
+  const old = cat.equip[item.slot];
+  cat.equip[item.slot] = item;
+  item.qty -= 1;
+  cat.inventory = cat.inventory.filter(i => i.qty > 0);
+  if (old) cat.inventory.push({...old, qty:1});
+  notify(`🔧 裝備了 ${item.emoji}${item.name}`, "success");
+  render();
+}
+
+// ── 貓咪表情 ──────────────────────────────────────────
+function catFaceHTML(cat) {
+  const ratio = cat.hp / cat.maxHp;
+  if (ratio < 0.2) return `<div class="cat-face hurt"><div class="cat-ears">/\\&nbsp;&nbsp;/\\</div><div class="cat-body">( ╥﹏╥ )</div><div class="cat-tail">&nbsp;&nbsp;～～</div></div>`;
+  if (cat.mood > 70) return `<div class="cat-face happy"><div class="cat-ears">∧∧</div><div class="cat-body">( ≧ω≦ )</div><div class="cat-tail">&nbsp;&nbsp;～♪</div></div>`;
+  if (cat.mood < 30) return `<div class="cat-face sad"><div class="cat-ears">ᗒ&nbsp;ᗕ</div><div class="cat-body">( -ˋ_ˊ- )</div><div class="cat-tail">&nbsp;&nbsp;...</div></div>`;
+  return `<div class="cat-face normal"><div class="cat-ears">∧∧</div><div class="cat-body">( ◕‿◕ )</div><div class="cat-tail">&nbsp;&nbsp;～</div></div>`;
+}
+
+// ── 渲染 ──────────────────────────────────────────────
+function render() {
+  const app = document.getElementById("app");
+  const {screen, tab, cat, battle, log, dialogues, aiThinking, shopTab} = state;
+
+  // TITLE
+  if (screen === "title") {
+    app.innerHTML = `
+      <div class="title-screen">
+        <div class="title-cat">🐱</div>
+        <h1>貓咪少年<br>物語</h1>
+        <p class="title-sub">擬人化養成 × 冒險 RPG</p>
+        <button class="btn-start" onclick="state.screen='create';render()">開始冒險</button>
+      </div>`;
+    return;
+  }
+
+  // CREATE
+  if (screen === "create") {
+    app.innerHTML = `
+      <div class="create-screen">
+        <h2>🐾 創建你的貓咪少年</h2>
+        <div class="form-group">
+          <label>名字（留空自動生成）</label>
+          <input class="form-input" id="catName" placeholder="輸入名字..." maxlength="10">
+        </div>
+        <div class="form-group">
+          <label>選擇職業</label>
+          <div class="job-grid">
+            ${JOBS.map(j=>`<button class="job-btn${state._createJob===j?' selected':''}" onclick="state._createJob='${j}';render()">${JOB_ICONS[j]} ${j}</button>`).join("")}
+          </div>
+        </div>
+        <button class="btn-primary" onclick="createCat(document.getElementById('catName').value, state._createJob||'見習劍士')">✨ 開始養成</button>
+        <button class="btn-back" onclick="state.screen='title';render()">← 返回</button>
+      </div>`;
+    return;
+  }
+
+  // BATTLE
+  if (screen === "battle" && battle) {
+    const isPlayerTurn = state.battleTurn === "player" && !battle.over;
+    app.innerHTML = `
+      <div class="battle-screen">
+        <div class="battle-header">⚔️ 戰鬥中</div>
+        <div class="battle-field">
+          <div class="fighter">
+            <div class="fighter-name">${cat.name}</div>
+            <div class="fighter-emoji">🐱</div>
+            <div class="fighter-hp" style="color:#7ee8a2">HP ${cat.hp}/${cat.maxHp}</div>
+          </div>
+          <div class="vs-text">VS</div>
+          <div class="fighter">
+            <div class="fighter-name">${battle.monster.name}</div>
+            <div class="fighter-emoji">${battle.monster.emoji}</div>
+            <div class="fighter-hp" style="color:#f87171">HP ${battle.monster.curHp}/${battle.monster.hp}</div>
+          </div>
+        </div>
+        <div class="battle-log" id="battleLog">
+          ${log.slice(-12).map(l=>`<div style="color:${l.color}">${l.text}</div>`).join("")}
+        </div>
+        ${!battle.over ? `
+        <div class="battle-actions">
+          <button class="battle-btn attack" ${isPlayerTurn?'':'disabled'} onclick="playerAttack()">⚔️ 攻擊</button>
+          <button class="battle-btn item" ${isPlayerTurn?'':'disabled'} onclick="useItemInBattle()">💊 道具</button>
+          <button class="battle-btn flee" onclick="flee()">💨 逃跑</button>
+        </div>` : `
+        <div class="battle-result ${battle.result==='win'?'win-result':'lose-result'}">
+          <h3>${battle.result==='win'?'🏆 勝利！':'💀 落敗...'}</h3>
+          <button class="btn-primary" style="margin-top:12px" onclick="state.screen='main';state.battle=null;render()">返回</button>
+        </div>`}
+      </div>`;
+    const bl = document.getElementById("battleLog");
+    if (bl) bl.scrollTop = bl.scrollHeight;
+    return;
+  }
+
+  // MAIN
+  if (screen === "main" && cat) {
+    const hpPct = (cat.hp/cat.maxHp*100).toFixed(1);
+    const expPct = (cat.exp/cat.expNext*100).toFixed(1);
+    const lastDialogue = dialogues[dialogues.length-1]?.content || "...";
+
+    let tabContent = "";
+
+    if (tab === "home") {
+      tabContent = `
+        <div class="home-tab">
+          <div class="cat-display">${catFaceHTML(cat)}</div>
+          <div class="dialogue-box">${lastDialogue}</div>
+          <div>
+            <div class="section-title">餵食</div>
+            <div class="food-grid">
+              ${FOODS.map((f,i)=>`
+                <button class="food-btn" onclick="feedCat(FOODS[${i}])">
+                  <span class="food-icon">${f.emoji}</span>
+                  ${f.name}
+                  <div class="food-price">${f.free?"免費":f.price+"G"}</div>
+                </button>`).join("")}
+            </div>
+          </div>
+          <div class="action-grid">
+            <button class="action-btn" onclick="playCat()">🎮 玩耍</button>
+            <button class="action-btn" onclick="sleepDay()">🌙 睡覺/下一天</button>
+            <button class="action-btn" onclick="askAI('你現在在做什麼呢？')">💬 閒聊</button>
+            <button class="action-btn" onclick="askAI('聊聊你最近的冒險吧！')">📖 聊冒險</button>
+          </div>
+          <div>
+            <div class="section-title">事件記錄</div>
+            <div class="log-box" id="mainLog">
+              ${log.map(l=>`<div style="color:${l.color}">${l.text}</div>`).join("")}
+            </div>
+          </div>
+        </div>`;
+    } else if (tab === "adventure") {
+      tabContent = `
+        <div>
+          <div class="section-title" style="margin-bottom:12px">選擇挑戰的對手</div>
+          <div class="monster-list">
+            ${MONSTERS.map((m,i)=>`
+              <div class="monster-card" onclick="startBattle(MONSTERS[${i}])">
+                <div class="monster-left">
+                  <div class="monster-emoji">${m.emoji}</div>
+                  <div>
+                    <div class="monster-name">${m.name}</div>
+                    <div class="monster-stats">HP ${m.hp} / ATK ${m.atk}</div>
+                  </div>
+                </div>
+                <div class="monster-reward">
+                  <div class="m-exp">+${m.exp} EXP</div>
+                  <div class="m-gold">+${m.gold} G</div>
+                </div>
+              </div>`).join("")}
+          </div>
+        </div>`;
+    } else if (tab === "shop") {
+      const showItems = EQUIPMENT.filter(e => shopTab === "equip" ? e.slot !== "item" : e.slot === "item");
+      tabContent = `
+        <div>
+          <div class="shop-tabs">
+            <button class="shop-tab-btn${shopTab==='equip'?' active':''}" onclick="state.shopTab='equip';render()">⚔️ 武具</button>
+            <button class="shop-tab-btn${shopTab==='item'?' active':''}" onclick="state.shopTab='item';render()">🧪 道具</button>
+          </div>
+          <div class="item-list">
+            ${showItems.map((item,i)=>{
+              const idx = EQUIPMENT.findIndex(e=>e.id===item.id);
+              return `
+                <div class="item-card">
+                  <div class="item-left">
+                    <div class="item-emoji">${item.emoji}</div>
+                    <div>
+                      <div class="item-name">${item.name}</div>
+                      <div class="item-stat">${item.atk?`ATK +${item.atk}`:''}${item.def?`DEF +${item.def}`:''}${item.heal?`回復 ${item.heal} HP`:''}</div>
+                    </div>
+                  </div>
+                  <button class="buy-btn" onclick="buyItem(EQUIPMENT[${idx}])">${item.price}G 購入</button>
+                </div>`;
+            }).join("")}
+          </div>
+        </div>`;
+    } else if (tab === "inventory") {
+      tabContent = `
+        <div>
+          <div class="section-title">已裝備</div>
+          <div class="equip-slots">
+            ${[["weapon","武器"],["armor","護甲"],["helm","頭盔"]].map(([slot,label])=>`
+              <div class="equip-slot">
+                <div class="slot-label">${label}</div>
+                <div class="slot-item">${cat.equip[slot]?.emoji||"－"}</div>
+                <div class="slot-name">${cat.equip[slot]?.name||"空"}</div>
+              </div>`).join("")}
+          </div>
+          <div class="section-title">背包道具（點擊使用/裝備）</div>
+          ${cat.inventory.length === 0
+            ? `<div style="color:#475569;font-size:.85rem;text-align:center;margin-top:20px">背包是空的</div>`
+            : `<div class="inv-grid">
+                ${cat.inventory.map((item,i)=>`
+                  <div class="inv-card" onclick="equipItem(state.cat.inventory[${i}])">
+                    <div class="i-emoji">${item.emoji}</div>
+                    <div class="i-name">${item.name}${item.qty>1?` ×${item.qty}`:""}</div>
+                    <div class="i-stat">${item.atk?`ATK +${item.atk}`:''}${item.def?`DEF +${item.def}`:''}${item.heal?`回復 ${item.heal} HP`:''}（${item.slot!=='item'?'點擊裝備':'點擊使用'}）</div>
+                  </div>`).join("")}
+              </div>`}
+        </div>`;
+    }
+
+    app.innerHTML = `
+      <div class="game-header">
+        <div class="header-top">
+          <div class="cat-info">
+            <h2>${JOB_ICONS[cat.job]} ${cat.name}</h2>
+            <span class="job-badge">${cat.job}</span>
+            <div class="day-badge">第 ${cat.days} 天</div>
+          </div>
+          <div class="cat-stats">
+            <div>Lv.<strong>${cat.lv}</strong></div>
+            <div>ATK <strong>${getTotalAtk(cat)}</strong> / DEF <strong>${getTotalDef(cat)}</strong></div>
+            <div class="gold">💰 ${cat.gold} G</div>
+          </div>
+        </div>
+        <div class="bars">
+          <div class="bar-row"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill hp" style="width:${hpPct}%"></div></div><span class="bar-val">${cat.hp}/${cat.maxHp}</span></div>
+          <div class="bar-row"><span class="bar-label">飽食</span><div class="bar-track"><div class="bar-fill hunger" style="width:${cat.hunger}%"></div></div><span class="bar-val">${cat.hunger}</span></div>
+          <div class="bar-row"><span class="bar-label">心情</span><div class="bar-track"><div class="bar-fill mood" style="width:${cat.mood}%"></div></div><span class="bar-val">${cat.mood}</span></div>
+          <div class="bar-row"><span class="bar-label">EXP</span><div class="bar-track"><div class="bar-fill exp" style="width:${expPct}%"></div></div><span class="bar-val">${cat.exp}/${cat.expNext}</span></div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        ${[["home","🏠","主頁"],["adventure","⚔️","冒險"],["shop","🛒","商店"],["inventory","🎒","背包"]].map(([t,ic,lb])=>`
+          <button class="tab-btn${tab===t?' active':''}" onclick="state.tab='${t}';render()">
+            <span class="tab-icon">${ic}</span>${lb}
+          </button>`).join("")}
+      </div>
+      <div class="main-content">${tabContent}</div>`;
+
+    const ml = document.getElementById("mainLog");
+    if (ml) ml.scrollTop = ml.scrollHeight;
+  }
+}
+
+// 初始化
+render();
+</script>
+</body>
+</html>

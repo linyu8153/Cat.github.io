@@ -223,6 +223,80 @@ function addLog(text, color="#c9d1d9") {
   if (state.log.length > 40) state.log.shift();
 }
 
+// ── 存檔 / 讀檔 ──────────────────────────────────────────
+function saveGame() {
+  if (!state.cat) return;
+  const save = {
+    cat: state.cat,
+    log: state.log.slice(-20),
+    dialogues: state.dialogues.slice(-4),
+  };
+  localStorage.setItem("neko_save", JSON.stringify(save));
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem("neko_save");
+    if (!raw) return false;
+    const save = JSON.parse(raw);
+    if (!save.cat) return false;
+    state.cat = save.cat;
+    state.log = save.log || [];
+    state.dialogues = save.dialogues || [];
+    state.screen = "main";
+    state.tab = "home";
+    state.battle = null;
+    return true;
+  } catch { return false; }
+}
+
+function deleteSave() {
+  localStorage.removeItem("neko_save");
+  state.cat = null;
+  state.screen = "title";
+  state.log = [];
+  state.dialogues = [];
+  render();
+}
+
+function exportSave() {
+  const raw = localStorage.getItem("neko_save");
+  if (!raw) { notify("沒有存檔可以匯出！","error"); return; }
+  const blob = new Blob([raw], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "neko_save_" + (state.cat?.name||"data") + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  notify("✅ 存檔已下載！","success");
+}
+
+function importSave() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const save = JSON.parse(ev.target.result);
+        if (!save.cat) throw new Error();
+        localStorage.setItem("neko_save", ev.target.result);
+        loadGame();
+        notify("✅ 存檔匯入成功！","success");
+        render();
+      } catch {
+        notify("❌ 存檔檔案有誤","error");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 function getTotalAtk(cat) {
   let b = 0;
   if (cat.equip.weapon) b += cat.equip.weapon.atk || 0;
@@ -349,6 +423,7 @@ function createCat(name, job) {
   state.tab = "home";
   state.dialogues = [{role:"assistant", content:`嗯……你就是新主人嗎？哼，本喵才不稀罕呢。不過……謝謝你收留我。我叫${name}。`}];
   addLog(`✨ ${name} 開始了他的冒險之旅！`, "#ffd700");
+  saveGame();
   render();
 }
 
@@ -360,6 +435,7 @@ function feedCat(food) {
   if (!food.free) cat.gold -= food.price;
   addLog(`🍽️ 餵了${cat.name} ${food.emoji}${food.name}`, "#7ee8a2");
   askAI(`主人剛給你吃了${food.name}，你的反應是？`);
+  saveGame();
   render();
 }
 
@@ -369,6 +445,7 @@ function playCat() {
   cat.hunger = Math.max(0, cat.hunger - 10);
   addLog(`🎮 和${cat.name}玩耍了一會兒！`, "#7ee8a2");
   askAI("主人陪你玩了一會兒，你很開心！");
+  saveGame();
   render();
 }
 
@@ -380,6 +457,7 @@ function sleepDay() {
   cat.days += 1;
   addLog(`🌙 第 ${cat.days} 天開始了`, "#a78bfa");
   askAI("早上好！新的一天開始了，你有什麼想做的嗎？");
+  saveGame();
   render();
 }
 
@@ -413,6 +491,7 @@ function playerAttack() {
     checkLevelUp(cat);
     state.battle.over = true;
     state.battle.result = "win";
+    saveGame();
     askAI(`你剛剛打敗了${m.name}，勝利後的感言？`);
   } else {
     state.battleTurn = "monster";
@@ -478,6 +557,7 @@ function buyItem(item) {
   }
   notify(`✅ 購入 ${item.emoji}${item.name}`, "success");
   addLog(`🛒 購入了 ${item.emoji}${item.name}（-${item.price}G）`, "#fbbf24");
+  saveGame();
   render();
 }
 
@@ -497,6 +577,7 @@ function equipItem(item) {
   cat.inventory = cat.inventory.filter(i => i.qty > 0);
   if (old) cat.inventory.push({...old, qty:1});
   notify(`🔧 裝備了 ${item.emoji}${item.name}`, "success");
+  saveGame();
   render();
 }
 
@@ -516,12 +597,24 @@ function render() {
 
   // TITLE
   if (screen === "title") {
+    const hasSave = !!localStorage.getItem("neko_save");
     app.innerHTML = `
       <div class="title-screen">
         <div class="title-cat">🐱</div>
         <h1>貓咪少年<br>物語</h1>
         <p class="title-sub">擬人化養成 × 冒險 RPG</p>
-        <button class="btn-start" onclick="state.screen='create';render()">開始冒險</button>
+        ${hasSave ? `
+        <button class="btn-start" onclick="if(loadGame())render()">▶ 繼續遊戲</button>
+        <button class="btn-back" style="margin-top:4px" onclick="state.screen='create';render()">✨ 新遊戲</button>
+        <div style="display:flex;gap:8px;width:100%;margin-top:4px">
+          <button class="btn-back" style="flex:1" onclick="exportSave()">📥 匯出存檔</button>
+          <button class="btn-back" style="flex:1" onclick="importSave()">📤 匯入存檔</button>
+        </div>
+        <button class="btn-back" style="margin-top:4px;color:#f87171;border-color:#f87171;width:100%" onclick="if(confirm('確定要刪除存檔嗎？'))deleteSave()">🗑 刪除存檔</button>
+        ` : `
+        <button class="btn-start" onclick="state.screen='create';render()">✨ 開始冒險</button>
+        <button class="btn-back" style="margin-top:8px" onclick="importSave()">📤 匯入存檔</button>
+        `}
       </div>`;
     return;
   }
@@ -614,6 +707,7 @@ function render() {
             <button class="action-btn" onclick="sleepDay()">🌙 睡覺/下一天</button>
             <button class="action-btn" onclick="askAI('你現在在做什麼呢？')">💬 閒聊</button>
             <button class="action-btn" onclick="askAI('聊聊你最近的冒險吧！')">📖 聊冒險</button>
+            <button class="action-btn" style="grid-column:span 2;color:#60a5fa;border-color:#60a5fa" onclick="exportSave()">📥 匯出存檔到手機</button>
           </div>
           <div>
             <div class="section-title">事件記錄</div>
